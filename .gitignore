@@ -1,0 +1,36 @@
+
+# 编译生成的文件
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.a
+*.lib
+
+# CMake 生成的文件
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# IDE 生成的文件
+*.log
+*.workspace
+*.idea/
+*.vscode/
+*.code-workspace
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.~*
+
+# 其他
+*.DS_Store
+Thumbs.db
