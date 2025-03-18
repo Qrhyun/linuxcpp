@@ -18,7 +18,7 @@ int main(){
     inet_pton(AF_INET,"117.72.107.190",&servaddr.sin_addr.s_addr);//将点分十进制的ip地址转换为网络字节序的ip地址 ,并且直接存储到sin_addr.s_addr中，将转化ip函数和设置ip地址的函数合并
     servaddr.sin_addr.s_addr=0;//随便可以访问我的任何网卡，还有一个宏INADDR_ANY  0.0.0.0
     servaddr.sin_port = htons(6666);//端口号，htons将主机字节序转换为网络字节序
-    int ret=(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));//这里要进行转化指针的类型
+    int ret=bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));//这里要进行转化指针的类型
     if(ret == -1){
         perror("bind");
         return -1;
