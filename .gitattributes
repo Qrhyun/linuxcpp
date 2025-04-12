@@ -1,0 +1,13 @@
+# 强制所有文本文件使用 LF
+* text=auto eol=lf
+
+# 特定文件类型规则
+*.c text eol=lf
+*.h text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.py text eol=lf
+*.java text eol=lf
+*.js text eol=lf
+*.md text eol=lf
+*.gitattributes text eol=lf
