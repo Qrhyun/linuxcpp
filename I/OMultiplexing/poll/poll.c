@@ -1,5 +1,4 @@
-
-
+// gcc -o poll poll.c
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -40,6 +39,7 @@ int main() {
 
         // 调用poll系统函数，让内核帮检测哪些文件描述符有数据
         int  ret = poll(fds,nfds+1, -1);//阻塞的，直到有数据到来才会返回
+        //这里只返回了有数据到来的文件描述符的个数，而没有返回具体的文件描述符，所以下面要遍历所有的文件描述符
         if(ret == -1) {
             perror("select");
             exit(-1);
@@ -73,6 +73,7 @@ int main() {
             }
             //这里i从1开始，因为0是监听的文件描述符，同时这里与select不同，select是从lfd+1开始的
             for(int i =  1; i <= nfds; i++) {
+                //这里我们只知道有数据到来，但是不知道是哪个文件描述符，所以要遍历所有的文件描述符
                 if(fds[i].revents & POLLIN) {
                     // 说明这个文件描述符对应的客户端发来了数据
                     char buf[1024] = {0};

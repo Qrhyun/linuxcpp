@@ -38,7 +38,9 @@ int main() {
           printf("服务器已经断开连接...\n");
           break;
       }
-      sleep(1);
+      sleep(1);//1s
+      //usleep(1000);//1000us
+      //上述都是为了显示上的问题
     
   }
 

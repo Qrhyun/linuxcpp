@@ -115,7 +115,7 @@ int main() {
               exit(-1);
           } else if(ret == 0) {
               continue;
-          } else if(ret &gt; 0) {
+          } else if(ret > 0) {
               // 说明检测到了有文件描述符的对应的缓冲区的数据发生了改变
               if(FD_ISSET(lfd, &tmp)) {
                   // 表示有新的客户端连接进来了
@@ -127,7 +127,7 @@ int main() {
                   FD_SET(cfd, &rdset);
   
                   // 更新最大的文件描述符
-                  maxfd = maxfd &gt; cfd ? maxfd : cfd;
+                  maxfd = maxfd>cfd ? maxfd : cfd;
               }
   
               for(int i = lfd + 1; i &lt;= maxfd; i++) {
