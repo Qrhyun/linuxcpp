@@ -130,7 +130,7 @@ int main() {
                   maxfd = maxfd>cfd ? maxfd : cfd;
               }
   
-              for(int i = lfd + 1; i &lt;= maxfd; i++) {
+              for(int i = lfd + 1; i<= maxfd; i++) {
                   if(FD_ISSET(i, &tmp)) {
                       // 说明这个文件描述符对应的客户端发来了数据
                       char buf[1024] = {0};
@@ -142,7 +142,7 @@ int main() {
                           printf("client closed...\n");
                           close(i);
                           FD_CLR(i, &rdset);
-                      } else if(len &gt; 0) {
+                      } else if(len> 0) {
                           printf("read buf = %s\n", buf);
                           write(i, buf, strlen(buf) + 1);
                       }
