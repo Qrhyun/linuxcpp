@@ -16,7 +16,8 @@ void addfd(int epollfd,int fd,bool one_shot){
    //将监听的文件描述符相关的检测信息添加到epoll实例中的红黑树中
    epoll_event event;//epoll_event结构体，这里来一个创建一个，并不用创建一个结构体数组
    event.data.fd=fd;
-   event.events=EPOLLIN | EPOLLRDHUP ;//这里下去再看看
+   //event.events=EPOLLIN | EPOLLRDHUP ;//这里下去再看看
+    event.events=EPOLLIN | EPOLLRDHUP | EPOLLET;//边沿触发模式
 
    if(one_shot){
        event.events|=EPOLLONESHOT;//设置为单次触发
@@ -67,8 +68,63 @@ void http_conn::close_conn(){
 
 //非阻塞读
 bool http_conn::read(){
-    printf("一次性读完数据\n");
-    return true;
+
+    if(m_read_idx>=READ_BUFFER_SIZE){
+        return false;//读缓冲区满了
+    }
+
+    //读取到的字节
+    int bytes_read=0;
+    //循环读取数据
+    while(true){
+        bytes_read=recv(m_sockfd,m_read_buf+m_read_idx,READ_BUFFER_SIZE-m_read_idx,0);//从socket中读取数据到读缓冲区中,这里用了两次m_read_index,这个参数很有用
+        if(bytes_read==-1){
+            if(errno==EAGAIN || errno==EWOULDBLOCK){//非阻塞读，表示没有数据了，输出的这两种错误是读完的正确现象
+                break;
+            }else{
+                return false;//出错了
+            }
+            return false;//出错了
+    }else if(bytes_read==0){//对端关闭连接
+        return false;
+    }
+    //更新读缓冲区的索引
+    m_read_idx+=bytes_read;//更新读缓冲区的索引
+
+}
+printf("读到数据了:%s\n",m_read_buf);
+return true;
+}
+
+//主状态机，解析http请求，用到下面的函数方法
+http_conn::HTTP_CODE http_conn::process_read(){
+    //初始化行的状态
+    LINE_STATUS line_status=LINE_OK;//行的状态
+    HTTP_CODE ret=NO_REQUEST;//请求的状态
+    //获取的一行的数据，指针
+    char *text=0;
+    //循环解析http请求
+    return NO_REQUEST;
+}
+
+//解析请求行
+http_conn::HTTP_CODE http_conn::parse_request_line(char *text){
+    return NO_REQUEST;
+}
+
+//解析头部
+http_conn::HTTP_CODE http_conn::parse_headers(char *text){
+    return NO_REQUEST;
+}
+
+//解析请求体
+http_conn::HTTP_CODE http_conn::parse_content(char *text){
+    return NO_REQUEST;
+}
+
+//解析一行
+http_conn::LINE_STATUS http_conn::parse_line(){
+    return LINE_OK;
 }
 
 //非阻塞写
@@ -79,8 +135,12 @@ bool http_conn::write(){
 
 //process函数,由线程池中的工作线程调用，这是处理http请求的函数
 void http_conn::process(){
-    printf("处理请求\n");
+    
    //解析http请求
-   printf("解析http请求\n");
+   HTTP_CODE read_ret=process_read();
+    if(read_ret==NO_REQUEST){
+         modfd(m_epollfd,m_sockfd,EPOLLIN);//如果没有请求不完整，就继续监听读事件
+         return;
+    }
    //
 }
