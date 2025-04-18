@@ -193,4 +193,39 @@ void* producer_thread(void* param)
     - 其他第三方库：
         如果程序中使用了第三方库（如 Boost、OpenCV、MySQL 等），需要根据库的文档显式指定链接选项。
    
+## 五.自定义信号处理函数
+信号是操作系统向进程发送的通知，用于告知进程某些事件的发生，例如用户中断（SIGINT）、段错误（SIGSEGV）等。信号处理函数允许程序在接收到特定信号时执行自定义的逻辑。
+```
+void addsig(int sig, void(handler)(int)) {
+    struct sigaction sa;
+    memset(&sa, '\0', sizeof(sa));
+    sa.sa_handler = handler;
+    sigfillset(&sa.sa_mask); // 将信号集 sa.sa_mask 填充为所有信号
+    sigaction(sig, &sa, NULL); // 将信号处理函数添加到信号集中
+}
+参数：
+  - sig：信号编号，表示要处理的信号。例如：
+     SIGINT（信号编号 2）：用户通过 Ctrl+C 发送的中断信号。
+     SIGSEGV（信号编号 11）：段错误信号。
+  - handler：信号处理函数，是一个指向函数的指针。该函数的原型为 void handler(int)，表示它接收一个整数参数（通常是信号编号）
+struct sigaction：
+  struct sigaction 是 POSIX 信号处理机制中的一个结构体，用于定义信号的处理方式
+  - sa_handler：信号处理函数的指针
+  - sa_mask：信号屏蔽集，定义在信号处理函数执行期间需要屏蔽的其他信号
+  - sa_flags：信号处理的标志，用于设置特殊行为（如是否使用实时信号等）
+memset(&sa, '\0', sizeof(sa))
+  - 功能：将 sa 结构体的所有字段初始化为零。
+sa.sa_handler = handler
+  - 功能：将信号处理函数设置为 handler
+sigfillset(&sa.sa_mask);
+  - 功能：将 sa.sa_mask 信号集填充为所有信号
+  - 作用：在信号处理函数执行期间，屏蔽所有信号。这可以防止信号处理函数被其他信号中断，从而避免潜在的竞态条件或死锁问题
+sigaction(sig, &sa, NULL);
+  - 功能：注册信号处理函数。
+  - 参数：
+     - sig：要处理的信号编号。
+     - &sa：指向 sigaction 结构体的指针，包含信号处理函数和信号屏蔽集等信息。
+     - NULL：用于存储当前信号的旧处理方式（如果需要）。这里传入 NULL 表示不保存旧的处理方式
+  - 作用：将信号处理函数 handler 与指定的信号 sig 关联起来。当信号发生时，操作系统会调用 handler 函数。
 
+```
