@@ -33,7 +33,8 @@ void addsig(int sig,void(handler)(int))
 extern void addfd(int epollfd,int fd,bool one_shot);
 //从epoll删除文件描述符
 extern void removefd(int epollfd,int fd);
-//修改
+//修改文件描述符
+extern void modfd(int epollfd,int fd,int ev);
 
 int main(int argc,char* argv[])
 {
@@ -57,7 +58,7 @@ int main(int argc,char* argv[])
        exit(-1);
    }
 
-   //4.主线程创建一个数组用来存放所有的客户端信息，主线程负责接收客户端连接，一会儿会放入http_conn里面
+   //4.主线程创建一个http_conn对象数组用来存放所有的客户端信息，主线程负责接收客户端连接，最开始的epoll模型会将客户端信息放进epoll_event结构体数组中，之后会放入http_conn里面
    http_conn* users=new  http_conn[MAX_FD];
 
    //网络通信逻辑
@@ -92,17 +93,71 @@ int main(int argc,char* argv[])
     }
     printf("监听成功，等待客户端连接...\n");
 
-    //5.创建epoll对象，事件的数组，即把监听到的事件放入数组中
-    epoll_event events[MAX_EVENT_NUMBER];//事件数组
+    //5.创建epoll对象，事件的数组，即把监听到的事件信息放入数组中
+    epoll_event events[MAX_EVENT_NUMBER];//事件数组，epoll_event结构体数组
     
-    int epollfd=epoll_create(5);//创建epoll对象，参数是监听的文件描述符个数
+    int epollfd=epoll_create(5);//创建epoll实例，参数是监听的文件描述符个数
     if(epollfd<0){
-        printf("创建epoll对象失败\n");
+        printf("创建epoll实例失败\n");
         exit(-1);
     }
 
-    //6.将监听套接字添加到epoll对象中
+    //6.将监听套接字添加到epoll实例中，其中进行业务逻辑的处理
+    addfd(epollfd,listenfd,false);//false表示监听文件描述符不设置单次触发EPOLLONESHOT
+    http_conn::m_epollfd=epollfd;//将epoll实例的文件描述符赋值给http_conn类的静态成员变量
 
+    while(true){
+        int num=epoll_wait(epollfd,events,MAX_EVENT_NUMBER,-1);//阻塞等待事件发生
+        if((num<0)&&(errno!=EINTR)){
+            printf("epoll_wait失败\n");
+            break;
+        }
 
+        //循环遍历事件数组
+        for(int i=0;i<num;i++){
+          int sockfd=events[i].data.fd;//获取当前就绪的文件描述符
+          if(sockfd==listenfd){
+            //监听的文件描述符有数据到达，表示有新的客户端连接进来了
+            struct sockaddr_in client_address;
+            socklen_t client_addrlength=sizeof(client_address);
+            int confd=accept(listenfd,(struct sockaddr*)&client_address,&client_addrlength);//接收客户端连接
+            if(confd<0){
+                printf("accept失败\n");
+                continue;
+            }
+            if(http_conn::m_user_count>=MAX_FD){
+                // 给客户端返回一个503错误
+                printf("连接数达到上限\n");
+                close(confd);
+                continue;
+            }
+            //将新的客户端的数据初始化，放到http_conn类的实例中，以连接的文件描述符为索引，然后将它的两个paivate成员变量赋值，同时这个里面也有addfd函数
+            users[confd].init(confd,client_address);//初始化客户端信息
+          }else if(events[i].events&(EPOLLRDHUP|EPOLLHUP|EPOLLERR)){
+            //表示客户端异常关闭了连接
+            users[sockfd].close_conn();//关闭连接
+        }else if(events[i].events&EPOLLIN){
+            //表示有数据到达,这里检测的是可读事件,边沿触发一次性读完
+            if(users[sockfd].read()){
+                pool->append(users+sockfd);//将任务添加到任务线程池中
+            }else{
+                users[sockfd].close_conn();//关闭连接
+            }
+    }else if(events[i].events&EPOLLOUT){
+            //表示有数据可以发送,这里检测的是可写事件，边沿触发一次性写完
+            if(!users[sockfd].write()){
+                users[sockfd].close_conn();//关闭连接
+            }
+        }
+    }
+    }
+    //7.关闭监听套接字
+    close(listenfd);
+    //8.关闭epoll实例
+    close(epollfd);
+    //9.关闭http_conn对象数组
+    delete [] users;
+    //10.关闭线程池
+    delete pool;
    return 0;
 }

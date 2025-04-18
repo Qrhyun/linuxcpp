@@ -1,5 +1,6 @@
 //这里将头文件和实现写在一块了
 #ifndef THREADPOOL_H
+#define THREADPOOL_H
 #define LOCKER_H
 #include <pthread.h>
 #include <exception>
@@ -35,7 +36,7 @@ private:
     std::list<T*> m_workqueue;
 
     // 互斥锁
-    locker m_queuelocker;
+    Locker m_queuelocker;
 
     // 信号量用来判断是否有任务需要处理
     sem m_queuestat;
@@ -61,7 +62,7 @@ m_stop(false),m_threads(NULL) {
     }
 
     // 创建thread_number个线程,并将它们设置为线程脱离，这样不用父线程最后回收它们
-    for(int  i=0;i<thread_number,++i){
+    for(int  i=0;i<thread_number;++i){
         printf("create the %dth thread\n", i);
         //在c语言中worker是一个全局函数，在c++中是一个类的静态函数,这里传入参数用this,是因为静态函数不能方位动态的成员变量，所以用this
         if(pthread_create(m_threads+i,NULL,worker,this)!=0){
