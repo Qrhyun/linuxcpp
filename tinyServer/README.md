@@ -22,7 +22,108 @@
 5. 有限状态机处理http请求
    > 1.初始化
      http_conn::init(int sockfd,const sockaddr_in& addr)->init()(开始m_check_state=CHECK_STATE_REQUESTLINE即为解析请求行)
-     2.正式解析
+     2.正式解析和正式回应
      process(解析http数据，生成响应)->process_read()->判断要么是请求体，要么是请求行和请求头，调用parse_line()判断是否为完整行->首先处理请求行m_check_state=CHECK_STATE_REQUESTLINE，调用
-     parse_request_line()，这个里面将m_check_state=CHECK_STATE_HEADER->然后处理请求头 case CHECK_STATE_HEADER.调用 parse_headers(text)，这个里面m_check_state = CHECK_STATE_CONTENT->最后处理请求体->有请求体的返回GET_REQUEST状态，无请求的请求头返回GET_REQUEST状态，process_read()里面遇到GET_REQUEST状态->do_request()
-     
+     parse_request_line()，这个里面将m_check_state=CHECK_STATE_HEADER->然后处理请求头 case CHECK_STATE_HEADER.调用 parse_headers(text)，这个里面m_check_state = CHECK_STATE_CONTENT->最后处理请求体->有请求体的返回GET_REQUEST状态，无请求体的请求头返回GET_REQUEST状态，process_read()里面遇到GET_REQUEST状态->do_request()(NO_RESOURCE，FILE_REQUEST，FORBIDDEN_REQUEST，BAD_REQUEST为process_write函数做准备)->process_read()返回do_request()的结果->在process里面有个参数接收上述结果，并将这个结果作为参数传递给process_write()->调用process_write()->根据之前传入的参数，分别调用 add_status_line() 添加状态行，调用 add_headers() 添加响应头部字段。调用 add_content() 添加响应体内容（如错误信息或文件内容）。如果请求的资源是文件（FILE_REQUEST），会设置分散内存写入（m_iv）->add_status_line(),add_headers(),add_content()又分别调用add_response往写缓冲区写入->process_write()如果成功了，会返回true->process() 会调用 modfd() 将当前连接的文件描述符（m_sockfd）的事件修改为 EPOLLOUT，以监听写事件。->modfd() 函数将文件描述符的事件修改为 EPOLLOUT，表示当前连接需要写数据。->主线程不断的监听文件描述符的事情，当 EPOLLOUT 事件触发时，表示当前连接的写缓冲区可用，主线程会调用对应的回调函数（通常是 write()）来处理写操作。
+
+## HTTP 请求解析与响应生成流程
+```
+process(解析http数据，生成响应)
+    |
+    v
+process_read()
+    |
+    +--> 判断要么是请求体，要么是请求行和请求头
+    |     |
+    |     v
+    |  parse_line() 判断是否为完整行
+    |     |
+    |     +--> 处理请求行 (m_check_state=CHECK_STATE_REQUESTLINE)
+    |     |     |
+    |     |     v
+    |     |  parse_request_line() -> m_check_state=CHECK_STATE_HEADER
+    |     |
+    |     +--> 处理请求头 (m_check_state=CHECK_STATE_HEADER)
+    |     |     |
+    |     |     v
+    |     |  parse_headers(text) -> m_check_state=CHECK_STATE_CONTENT
+    |     |
+    |     +--> 处理请求体
+    |           |
+    |           v
+    |        有请求体返回 GET_REQUEST 状态
+    |        无请求体的请求头返回 GET_REQUEST 状态
+    |
+    v
+遇到 GET_REQUEST 状态
+    |
+    v
+do_request() -> 返回 NO_RESOURCE, FILE_REQUEST, FORBIDDEN_REQUEST, BAD_REQUEST
+    |
+    v
+process_read() 返回 do_request() 的结果
+    |
+    v
+process_write(read_ret)
+    |
+    +--> 根据参数调用 add_status_line() 添加状态行
+    |     |
+    |     v
+    |  add_response() 往写缓冲区写入状态行
+    |
+    +--> 调用 add_headers() 添加响应头部字段
+    |     |
+    |     +--> add_content_length()
+    |     +--> add_content_type()
+    |     +--> add_linger()
+    |     +--> add_blank_line()
+    |           |
+    |           v
+    |        add_response() 往写缓冲区写入头部字段
+    |
+    +--> 调用 add_content() 添加响应体内容
+    |     |
+    |     v
+    |  add_response() 往写缓冲区写入内容
+    |
+    +--> 如果请求的资源是文件 (FILE_REQUEST)
+    |     |
+    |     v
+    |  设置分散内存写入 (m_iv)
+    |
+    v
+process_write() 返回 true
+    |
+    v
+process() 调用 modfd() 将文件描述符事件修改为 EPOLLOUT
+    |
+    v
+主线程监听文件描述符事件
+    |
+    v
+EPOLLOUT 事件触发
+    |
+    v
+主线程调用 write() 处理写操作
+```
+## 架构图
+```
+# 项目架构图
+
+```plaintext
+process()  <-- 线程池中的工作线程调用
+ ├── process_read()  <-- 解析 HTTP 请求
+ ├── process_write(HTTP_CODE ret)  <-- 生成 HTTP 响应
+ │    ├── add_status_line()  <-- 添加状态行
+ │    │    └── add_response()  <-- 写入状态行到缓冲区
+ │    ├── add_headers()  <-- 添加响应头部字段
+ │    │    ├── add_content_length()
+ │    │    ├── add_content_type()
+ │    │    ├── add_linger()
+ │    │    └── add_blank_line()
+ │    │         └── add_response()  <-- 写入头部字段到缓冲区
+ │    └── add_content()  <-- 添加响应体内容
+ │         └── add_response()  <-- 写入内容到缓冲区
+ └── write()  <-- 发送 HTTP 响应
+      └── writev()  <-- 分散写，将缓冲区和文件内容一起发送
+```

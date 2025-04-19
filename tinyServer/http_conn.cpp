@@ -179,10 +179,8 @@ http_conn::HTTP_CODE http_conn::process_read(){
                 return INTERNAL_ERROR;//服务器内部错误
             }
         }
-      return NO_REQUEST;//请求不完整，需要继续读取客户数据
-        
     }
-    
+    return NO_REQUEST;//请求不完整，需要继续读取客户数据
 }
 
 //解析HTTP请求行获得请求方法，目标URL，HTTP版本
@@ -421,6 +419,7 @@ bool http_conn::add_headers(int content_len) {
     add_content_type();
     add_linger();
     add_blank_line();
+    return true;
 }
 
 //<1>添加响应头部字段，添加Content-Length
@@ -443,6 +442,11 @@ bool http_conn::add_linger()
 bool http_conn::add_blank_line()
 {
     return add_response( "%s", "\r\n" );
+}
+
+bool http_conn::add_content( const char* content )
+{
+    return add_response( "%s", content );
 }
 
 // 二. 根据服务器处理HTTP请求的结果，决定返回给客户端的内容
@@ -514,6 +518,4 @@ void http_conn::process(){
     }
     //如果请求处理完了，就继续监听写事件
     modfd(m_epollfd,m_sockfd,EPOLLOUT);
-
-
 }
