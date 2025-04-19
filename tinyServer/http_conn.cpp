@@ -1,5 +1,17 @@
 #include "http_conn.h"
 
+// 定义HTTP响应的一些状态信息
+const char* ok_200_title = "OK";
+const char* error_400_title = "Bad Request";
+const char* error_400_form = "Your request has bad syntax or is inherently impossible to satisfy.\n";
+const char* error_403_title = "Forbidden";
+const char* error_403_form = "You do not have permission to get file from this server.\n";
+const char* error_404_title = "Not Found";
+const char* error_404_form = "The requested file was not found on this server.\n";
+const char* error_500_title = "Internal Error";
+const char* error_500_form = "There was an unusual problem serving the requested file.\n";
+
+
 //静态成员变量的初始化
 int http_conn:: m_epollfd=-1;;
 int http_conn::m_user_count=0;
@@ -294,7 +306,7 @@ http_conn::LINE_STATUS http_conn::parse_line(){
     return LINE_OPEN;//行数据尚且不完整
 }
 
-
+//通过解析http请求的结果返回，来进行相应的服务器业务处理，如：获取服务器的资源文件，并映射到内存中。然后这一切都完成后，返回NO_RESOURCE，FILE_REQUEST，FORBIDDEN_REQUEST，BAD_REQUEST为process_write函数做准备
 http_conn::HTTP_CODE http_conn::do_request(){
     // "/home/qrh/tinyServer/resources"
     strcpy( m_real_file, doc_root );//将网站根目录赋值给m_real_file
@@ -317,7 +329,7 @@ http_conn::HTTP_CODE http_conn::do_request(){
 
     // 以只读方式打开文件
     int fd = open( m_real_file, O_RDONLY );
-    // 创建内存映射，将index.html文件映射到内存中
+    // 创建内存映射，将index.html文件的内容映射到内存中，那么它的内容会作为响应体的内容
     m_file_address = ( char* )mmap( 0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0 );
     close( fd );
     // 返回已经获取了这个文件的状态
@@ -333,10 +345,156 @@ void http_conn::unmap() {
     }
 }
 
-//非阻塞写
-bool http_conn::write(){
-    printf("一次性写完数据\n");
-    return false;
+// 写HTTP响应
+bool http_conn::write()
+{
+    int temp = 0;
+    int bytes_have_send = 0;    // 已经发送的字节
+    int bytes_to_send = m_write_idx;// 将要发送的字节 （m_write_idx）写缓冲区中待发送的字节数
+    
+    if ( bytes_to_send == 0 ) {
+        // 将要发送的字节为0，这一次响应结束。
+        modfd( m_epollfd, m_sockfd, EPOLLIN ); 
+        init();
+        return true;
+    }
+
+    while(1) {
+        // 分散写，m_write_buf和m_file_address内存不在一起，分开一起写出去。分散的内存用类型m_iv结构体来表示
+        temp = writev(m_sockfd, m_iv, m_iv_count);
+        if ( temp <= -1 ) {
+            // 如果TCP写缓冲没有空间，则等待下一轮EPOLLOUT事件，虽然在此期间，
+            // 服务器无法立即接收到同一客户的下一个请求，但可以保证连接的完整性。
+            if( errno == EAGAIN ) {
+                modfd( m_epollfd, m_sockfd, EPOLLOUT );
+                return true;
+            }
+            unmap();
+            return false;
+        }
+        bytes_to_send -= temp;
+        bytes_have_send += temp;
+        if ( bytes_to_send <= bytes_have_send ) {
+            // 发送HTTP响应成功，根据HTTP请求中的Connection字段决定是否立即关闭连接
+            unmap();
+            if(m_linger) {
+                init();
+                modfd( m_epollfd, m_sockfd, EPOLLIN );
+                return true;
+            } else {
+                modfd( m_epollfd, m_sockfd, EPOLLIN );
+                return false;
+            } 
+        }
+    }
+}
+
+// 一.往写缓冲m_write_buf中写入待发送的数据
+bool http_conn::add_response( const char* format, ... ) {
+    //参数形式：前面是一个格式化字符串，后面是可变参数
+    if( m_write_idx >= WRITE_BUFFER_SIZE ) {
+        //写缓冲区满了
+        return false;
+    }
+    //解析传入参数，制作成列表
+    va_list arg_list;
+    va_start( arg_list, format );
+    //将格式化字符串和参数列表写入到写缓冲区中
+    int len = vsnprintf( m_write_buf + m_write_idx, WRITE_BUFFER_SIZE - 1 - m_write_idx, format, arg_list );
+    if( len >= ( WRITE_BUFFER_SIZE - 1 - m_write_idx ) ) {
+        return false;
+    }
+    m_write_idx += len;
+    va_end( arg_list );
+    return true;
+}
+
+// 三.添加响应内容
+//1.添加响应状态行，分别传入http版本，状态码，状态码的描述给response函数
+bool http_conn::add_status_line( int status, const char* title ) {
+    return add_response( "%s %d %s\r\n", "HTTP/1.1", status, title );
+}
+
+//2.添加响应头部字段
+bool http_conn::add_headers(int content_len) {
+    add_content_length(content_len);
+    add_content_type();
+    add_linger();
+    add_blank_line();
+}
+
+//<1>添加响应头部字段，添加Content-Length
+bool http_conn::add_content_length(int content_len) {
+    return add_response( "Content-Length: %d\r\n", content_len );
+}
+
+//<2>添加响应头部字段，添加Content-Type,返回的文件类型
+bool http_conn::add_content_type() {
+    return add_response("Content-Type:%s\r\n", "text/html");
+}
+
+//<3>添加响应头部字段，添加Connection,根据请求体发来的m_linger来判断是否保持长连接,如果是长连接，就添加Connection: keep-alive,否则添加Connection: close
+bool http_conn::add_linger()
+{
+    return add_response( "Connection: %s\r\n", ( m_linger == true ) ? "keep-alive" : "close" );
+}
+
+//<4>添加响应头部字段，添加空行
+bool http_conn::add_blank_line()
+{
+    return add_response( "%s", "\r\n" );
+}
+
+// 二. 根据服务器处理HTTP请求的结果，决定返回给客户端的内容
+bool http_conn::process_write(HTTP_CODE ret) {
+    switch (ret)
+    {
+        case INTERNAL_ERROR:
+            add_status_line( 500, error_500_title );
+            add_headers( strlen( error_500_form ) );
+            if ( ! add_content( error_500_form ) ) {
+                return false;
+            }
+            break;
+        case BAD_REQUEST:
+            add_status_line( 400, error_400_title );
+            add_headers( strlen( error_400_form ) );
+            if ( ! add_content( error_400_form ) ) {
+                return false;
+            }
+            break;
+        case NO_RESOURCE:
+            add_status_line( 404, error_404_title );
+            add_headers( strlen( error_404_form ) );
+            if ( ! add_content( error_404_form ) ) {
+                return false;
+            }
+            break;
+        case FORBIDDEN_REQUEST:
+            add_status_line( 403, error_403_title );
+            add_headers(strlen( error_403_form));
+            if ( ! add_content( error_403_form ) ) {
+                return false;
+            }
+            break;
+        case FILE_REQUEST:
+            add_status_line(200, ok_200_title );
+            add_headers(m_file_stat.st_size);
+            //分散内存结合在一起
+            m_iv[ 0 ].iov_base = m_write_buf;
+            m_iv[ 0 ].iov_len = m_write_idx;
+            m_iv[ 1 ].iov_base = m_file_address;
+            m_iv[ 1 ].iov_len = m_file_stat.st_size;
+            m_iv_count = 2;
+            return true;
+        default:
+            return false;
+    }
+
+    m_iv[ 0 ].iov_base = m_write_buf;
+    m_iv[ 0 ].iov_len = m_write_idx;
+    m_iv_count = 1;
+    return true;
 }
 
 //process函数,由线程池中的工作线程调用，这是处理http请求的函数
@@ -348,5 +506,14 @@ void http_conn::process(){
          modfd(m_epollfd,m_sockfd,EPOLLIN);//如果没有请求不完整，就继续监听读事件
          return;
     }
-   //
+
+   //生成响应
+   bool write_ret=process_write(read_ret);
+    if(!write_ret){
+         close_conn();//关闭连接，调用close_conn函数
+    }
+    //如果请求处理完了，就继续监听写事件
+    modfd(m_epollfd,m_sockfd,EPOLLOUT);
+
+
 }

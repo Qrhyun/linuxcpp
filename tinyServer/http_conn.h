@@ -89,6 +89,14 @@ private:
     
     // 3.这一组函数被process_write调用以填充HTTP应答
     void unmap();//取消内存映射
+    bool add_response( const char* format, ... );
+    bool add_content( const char* content );
+    bool add_content_type();
+    bool add_status_line( int status, const char* title );
+    bool add_headers( int content_length );
+    bool add_content_length( int content_length );
+    bool add_linger();
+    bool add_blank_line();
 private:
     // 1.http客户端连接的socket相关信息
     int m_sockfd; //该http连接的socket
