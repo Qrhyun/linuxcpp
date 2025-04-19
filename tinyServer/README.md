@@ -23,6 +23,6 @@
    > 1.初始化
      http_conn::init(int sockfd,const sockaddr_in& addr)->init()(开始m_check_state=CHECK_STATE_REQUESTLINE即为解析请求行)
      2.正式解析
-     process_read()->判断要么是请求体，要么是请求行和请求头，调用parse_line()判断是否为完整行->首先处理请求行m_check_state=CHECK_STATE_REQUESTLINE，调用
+     process(解析http数据，生成响应)->process_read()->判断要么是请求体，要么是请求行和请求头，调用parse_line()判断是否为完整行->首先处理请求行m_check_state=CHECK_STATE_REQUESTLINE，调用
      parse_request_line()，这个里面将m_check_state=CHECK_STATE_HEADER->然后处理请求头 case CHECK_STATE_HEADER.调用 parse_headers(text)，这个里面m_check_state = CHECK_STATE_CONTENT->最后处理请求体->有请求体的返回GET_REQUEST状态，无请求的请求头返回GET_REQUEST状态，process_read()里面遇到GET_REQUEST状态->do_request()
      

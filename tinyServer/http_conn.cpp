@@ -4,6 +4,9 @@
 int http_conn:: m_epollfd=-1;;
 int http_conn::m_user_count=0;
 
+//网站根目录
+const char *doc_root="/home/qrh/linuxcpp/linuxcpp/tinyServer/resources";
+
 //设置文件描述符为非阻塞
 void setnonblocking(int fd){
     int old_option=fcntl(fd,F_GETFL);//获取文件描述符的状态标志
@@ -293,6 +296,41 @@ http_conn::LINE_STATUS http_conn::parse_line(){
 
 
 http_conn::HTTP_CODE http_conn::do_request(){
+    // "/home/qrh/tinyServer/resources"
+    strcpy( m_real_file, doc_root );//将网站根目录赋值给m_real_file
+    int len = strlen( doc_root );
+    strncpy( m_real_file + len, m_url, FILENAME_LEN - len - 1 );//m_url拼接在m_real_file后面，形成真实的服务器资源index.html的路径
+    // 获取m_real_file文件的相关的状态信息，-1失败，0成功
+    if ( stat( m_real_file, &m_file_stat ) < 0 ) {
+        return NO_RESOURCE;
+    }
+
+    // 判断访问权限
+    if ( ! ( m_file_stat.st_mode & S_IROTH ) ) {
+        return FORBIDDEN_REQUEST;
+    }
+
+    // 判断是否是目录，不能把目录当做访问的资源文件来处理
+    if ( S_ISDIR( m_file_stat.st_mode ) ) {
+        return BAD_REQUEST;
+    }
+
+    // 以只读方式打开文件
+    int fd = open( m_real_file, O_RDONLY );
+    // 创建内存映射，将index.html文件映射到内存中
+    m_file_address = ( char* )mmap( 0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0 );
+    close( fd );
+    // 返回已经获取了这个文件的状态
+    return FILE_REQUEST;
+}
+
+//对内存映射区进行munmap操作
+void http_conn::unmap() {
+    if( m_file_address )
+    {
+        munmap( m_file_address, m_file_stat.st_size );
+        m_file_address = 0;
+    }
 }
 
 //非阻塞写
