@@ -1,4 +1,4 @@
-## gdb调试准备
+## 一.gdb调试准备
 ### 生成一个带调试信息的程序
 ```
 gcc -g -o hello_server hello_server.c
@@ -47,4 +47,20 @@ Detaching from program: /home/zhangyl/flamingoserver/chatserver, process 42921
     - 修改： echo "/corefile/core-%e-%p-%t" > /proc/sys/kernel/core_pattern，添加了程序名字（e），core生成时间（t），pid
 ```
 ![core pid](corepid.jpg)
+
+## 二.gdb常用命令详解
+### break,可简写成b，tbreak命令是一个临时断点
+```
+## 在函数名为functionname的入口处添加一个断点 
+break functionname                 
+## 在当前文件行号为LineNo处添加一个断点
+break LineNo                            
+## 在filename文件行号为LineNo处添加一个断点,最常用
+break filename:LineNo
+  - 当设置多个断点的时候，使用run重启调试程序的时候
+     - 程序第一次会触发main函数处的断点，我们输入continue命令继续运行，接着触发anet.c:455行的断点         
+```
+### backtrace（bt）与frame命令
+```
+## backtrace，可简写成bt，用来查看当前所在线程的调用堆栈
 
