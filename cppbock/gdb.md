@@ -48,6 +48,12 @@ Detaching from program: /home/zhangyl/flamingoserver/chatserver, process 42921
 ```
 ![core pid](corepid.jpg)
 
+### gdb TUI模式（更好的看代码）
+1. `gdbtui -q` 需要调试的程序名
+2. 用切换键`Ctrl + x + a`调出gdbtui
+3. `layout + 窗口类型`命令来进行选择自己需要的窗口
+4. 当前gdb tui窗口放大或者缩小以后，gdbtui窗口中的内容不会自己刷新以适应新的窗口尺寸，我们可以通过`space`键强行让gdbtui窗口刷新。
+
 ## 二.gdb常用命令详解,在gdb命令行界面如果直接按下回车键，默认是将最近一条命令重新执行一遍
 ### break,可简写成b，tbreak命令是一个临时断点,continue可简写成c
 ```
@@ -208,4 +214,12 @@ dir SourcePath1:SourcePath2:SourcePath3
 ```
 `show dir`查看当前设置了哪些源码搜索路径
 `dir`命令不加参数表示清空当前已设置的源码搜索路径
-
+## 三.使用gdb调试_多线程_程序的总结
+1. 使用gdb将程序跑起来，然后按Ctrl + c将程序中断下来，使用`info threads`命令查看当前进程有多少线程
+2. 使用`thread 线程编号`可以切换到对应的线程去，然后使用`bt`命令可以查看对应线程从顶到底层的函数调用，以及上层调用下层对应的源码中的位置；当然，你也可以使用`frame` 栈函数编号（栈函数编号即下图中的#0 ~ #4，使用frame命令时不需要加#）切换到当前函数调用堆栈的任何一层函数调用中去，然后分析该函数执行逻辑，使用`print`等命令输出各种变量和表达式值，或者进行单步调试
+3. 希望执行流一直在某个线程执行,也就是说我就盯着某个线程调试这个线程，因为存在CPU时间片切换。我们单步调试线程A时，我们不希望线程A函数中的值被其他线程改变
+   - 因此,gdb提供了一个将程序执行流锁定在当前调试线程的命令选项——scheduler-locking选项，这个选项有三个值，分别是on、step和off。
+   - set scheduler-locking on可以用来锁定当前线程，只观察这个线程的运行情况， 当锁定这个线程时， 其他线程就处于了暂停状态，也就是说你在当前线程执行next、step、until、finish、return命令时，其他线程是不会运行的
+   - set scheduler-locking step也是用来锁定当前线程，当且仅当使用next或step命令做单步调试时会锁定当前线程，如果你使用until、finish、return等线程内调试命令（它们不是单步控制命令），所以其他线程还是有机会运行的
+   - set scheduler-locking off用于释放锁定当前线程
+   `set scheduler-locking on/step/off`
