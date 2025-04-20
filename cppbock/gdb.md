@@ -18,11 +18,11 @@ strip 可执行文件
 #### 方法一 直接调试目标程序,即调试源程序的执行文件
 ```
 gdb filename
-#直接使用gdb启动一个程序进行调试，也就是说这个程序还没有启动
+#直接使用gdb启动一个程序进行调试，也就是说这个程序还没有启动，只是利用gcc编译了，还没运行执行文件
 ```
 #### 方法二 附加进程
 ```
-#1.一个程序已经启动了，我们想调试这个程序，但是又不想重启这个程序
+#1.一个程序已经启动了，我们想调试这个程序，但是又不想重启这个程序（因为法一是在没有run运行的情况下调试的，所以这里不能再`Ctrl+c`回到gcc和run之间的gdb调试步骤
 ps -ef | grep chatserver
 gdb attach 42921
 
@@ -223,3 +223,20 @@ dir SourcePath1:SourcePath2:SourcePath3
    - set scheduler-locking step也是用来锁定当前线程，当且仅当使用next或step命令做单步调试时会锁定当前线程，如果你使用until、finish、return等线程内调试命令（它们不是单步控制命令），所以其他线程还是有机会运行的
    - set scheduler-locking off用于释放锁定当前线程
    `set scheduler-locking on/step/off`
+## 四.使用gdb调试_多进程_程序,gdb调试父子进程
+nginx对客户端的连接是采用多进程模型，当nginx接受客户端连接后，创建一个新的进程来处理该连接上的信息来往。新产生的进程与原进程互为父子关系
+### 方法一：
+用gdb先调试父进程，等子进程被fork出来后，使用gdb attach到子进程上去
+## 五.gdb实用调试技巧
+### 将print输出的字符串或字符数组显示完整
+当我们使用print命令打印一个字符串或者字符数组时，如果该字符串太长，print命令默认显示不全的，我们可以通过在gdb中输入set print element 0设置一下。
+```
+(gdb) n
+563         os << "{\"code\": 0, \"msg\": \"ok\", \"userinfo\":" << friendlist << "}";
+(gdb) p friendlist
+$1 = "[{\"members\":[{\"address\":\"\",\"birthday\":19900101,\"clienttype\":0,\"customface\":\"\",\"facetype\":2,\"gender\":0,\"mail\":\"\",\"markname\":\"\",\"nickname\":\"bj_man\",\"phonenumber\":\"\",\"signature\":\"\",\"status\":0,\"userid\":4,"...
+(gdb) set print element 0
+(gdb) p friendlist       
+$2 = "[{\"members\":[{\"address\":\"\",\"birthday\":19900101,\"clienttype\":0,\"customface\":\"\",\"facetype\":2,\"gender\":0,\"mail\":\"\",\"markname\":\"\",\"nickname\":\"bj_man\",\"phonenumber\":\"\",\"signature\":\"\",\"status\":0,\"userid\":4,\"username\":\"13811411052\"},{\"address\":\"\",\"birthday\":19900101,\"clienttype\":0,\"customface\":\"\",\"facetype\":0,\"gender\":0,\"mail\":\"\",\"markname\":\"\",\"nickname\":\"Half\",\"phonenumber\":\"\",\"signature\":\"\",\"status\":0,\"userid\":5,\"username\":\"15618326596\"},{\"address\":\"\",\"birthday\":19900101,\"clienttype\":0,\"customface\":\"\",\"facetype\":34,\"gender\":0,\"mail\":\"\",\"markname\":\"\",\"nickname\":\"云淡风轻\",\"phonenumber\":\"\",\"signature\":\"\",\"status\":0,\"userid\":7,\"username\":\"china001\"},...太长了，这里省略...
+```
+
