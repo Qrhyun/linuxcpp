@@ -126,15 +126,86 @@ type = int
    eventLoop = 0x5e5770
    flags = 27
 ```
-### next(n)、step（s）、until、finish、return、jump命令
+### next(n)、step（s）、until(u)、finish、return、jump(j)命令
+补充：函数调用方式，我们常用的函数调用方式有**__cdecl**、__stdcall，C++的非静态成员函数的调用方式是**__thiscall**，函数参数的传递本质上是函数参数的入栈的过程，而这三种调用方式参数的入栈顺序都是从右往左的
 ```
 # n作用是让gdb跳到下一行代码.这里跳到下一行代不是说一定跳到代码最近的下一行，而是根据程序逻辑跳转到相应的位置。遇到函数调用不进入函数体内部而直接跳过（单步步过）
 # s命令就是”单步步入“（step into），顾名思义，就是遇到函数调用，进入函数内部。
   eg:b main在main函数处加一个断点，然后使用r命令重新跑一下程序，会触发刚才加在main函数处的断点，然 
   后使用n命令让程序走到spt_init(argc, argv)函数调用处，再输入s命令就可以进入该函数了
-
-
+# finish命令，在实际调试的时候，我们在某个函数中调试一会儿后，我们不需要再一步步执行到函数返回处，我们希望直接执行完当前函数并回到上一层调用处 *注意要执行完才退出
+# return命令的作用是结束执行当前函数，同时可以指定该函数的返回值 *不执行完直接退出
+# until（u）使用这个命令让程序运行到指定行停下来，根据它这个“运行到“，可以取代l命令来使用u 2774命令让gdb直接跳到2774行，这样就能快速执行完2740 ~ 2774行中间的代码（不包括2774行）。当然，我们也可以先在2774行加一个断点，然后使用continue命令运行到这一行来达到同样的效果，但是使用until命令显然更方便。
+# j会让程序执行流跳转到指定位置执行
+j location
+  - 其行为也是不可控制的，例如跳过了某个对象的初始化代码，直接执行操作该对象的代码，那么可能会导致程序崩溃或其他意外行为
+  - 如果jump跳转到的位置没有设置断点，那么gdb执行完跳转操作后，会继续往下执行,因此如果我们想查看执行跳转处的代码后的结果，需要在location处设置断点
+  - 除了跳过一些代码的执行外，还有一个妙用就是可以执行一些我们想要执行的代码，而这些代码在正常的逻辑下可能并不会执行
 ```
+### disassemble命令（汇编）
+在某些场景下，我们可能要通过查看某段代码的汇编指令去排查问题，或者在调试一些不含调试信息的 release 版程序时，只能通过反汇编代码去定位问题
+gdb反汇编格式默认为AT&T格式，可以通过show disassembly-flavor查看当前反汇编格式。如果读者习惯阅读intel汇编格式，可以使用set disassembly-flavor intel命令来设置
 
-
+### set args（传递命令行参数）与show args命令(查看命令行参数是否设置成功)
+正确的做法是在用gdb附加程序后，在使用run命令之前，使用set args 命令行参数来指定
+```
+# 设置和查看
+(gdb) set args ../redis.conf 
+(gdb) show args
+Argument list to give program being debugged when it is started is "../redis.conf ".
+# 清除
+(gdb) set args
+(gdb) show args
+Argument list to give program being debugged when it is started is "".
+```
+### watch命令（监视变量或者内存）
+当这个变量或者该内存处的值发送变化时，gdb就会中断下来。监视某个变量或者某个内存地址会产生一个“watch point”（观察点）。当设置的观察点是一个局部变量时。局部变量无效后，观察点也会失效。**watch命令就实际上可能会通过添加硬件断点来达到监视数据变化的目的**
+1. 整形变量
+```
+int i;  
+watch i
+```
+2. 指针类型
+```
+char *p; 
+watch p 与 watch *p
+#watch p与watch *p是有区别的，前者是查看*(&p)， 是p变量本身；后者是p所指的内存的内容，一般是我们所需要的，我们大多数情况就是要看某内存地址上的数据是怎样变化的。
+```
+3. watch一个数组或内存区间
+```
+char buf[128];
+watch buf
+```
+### display命令（监视变量或者内存值）
+每次 gdb 中断下来都会自动输出这些被监视变量或内存的值。某个程序有一些全局变量，每次触发断点gdb中断下来，希望可以自动输出这些全局变量的最新值，那么就可以使用display命令。display命令使用格式是display 变量名/内存地址/寄存器名。可以使用info display查看当前已经监视了哪些值，使用delete display清除全部被监视的变量，使用delete display 编号移除对指定变量的监视。
+```
+0x00007ffff71e2603 in epoll_wait () from /usr/lib64/libc.so.6
+(gdb) display $ebx
+1: $ebx = 24068
+(gdb) display /x $ebx
+2: /x $ebx = 0x5e04
+(gdb) display $eax
+3: $eax = -4
+(gdb) b main
+Breakpoint 2 at 0x436abd: file server.c, line 5001.
+(gdb) r
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /root/redis-6.0.3/src/redis-server 
+...省略部分输出...
+Breakpoint 2, main (argc=1, argv=0x7fffffffe308) at server.c:5001
+5001        spt_init(argc, argv);
+1: $ebx = 0
+2: /x $ebx = 0x0
+3: $eax = 4418219
+(gdb)
+```
+### dir命令——让被调试的可执行程序匹配源代码
+即产生可执行文件的机器和使用可执行文件的机器不是同一台，无法用用gdb调试core文件。或者由于一些原因，编译时的源码文件被挪动了位置，使用gdb调试时也会出现上述情况。-g只是加了一个可执行程序与源码之间的**位置**映射关系
+```
+# 加一个源文件路径到当前路径的前面,指定多个路径，可以使用”:”
+dir SourcePath1:SourcePath2:SourcePath3
+```
+`show dir`查看当前设置了哪些源码搜索路径
+`dir`命令不加参数表示清空当前已设置的源码搜索路径
 
