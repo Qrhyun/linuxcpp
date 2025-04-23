@@ -1473,10 +1473,6 @@ Foo foo;
 ...
 executor->Schedule([&foo] { Frobnicate(foo); });
 ```
-
-1  
-2  
-
 除非能证明概念显著改善了特定场景（如深层嵌套或不明显需求的错误信息）
 
 • 概念必须能被编译器静态验证。不要使用主要优势来自语义（或其他无法强制实施）约束的概念，这类需求应通过注释、断言或测试实现
@@ -1546,12 +1542,6 @@ C++20 引入了 "模块"（modules），这是一种旨在替代头文件文本�
 template <typename T> concept Addable = requires(T a, T b) { a + b };
 template <Addable T> T Add(T a, T b) { return a + b; }
 ```
-
-1  
-2  
-3  
-4  
-
 在新代码中，优先使用 `using` 而非 `typedef`，因其语法与 C++ 其他部分更一致且支持模板。
 
 头文件中的别名属于 API 的公开部分，除非它们位于函数定义、类的私有部分或显式标记的内部命名空间中。这些区域或 `.cc` 文件中的别名属于实现细节（因客户端代码无法引用），不受此规则限制。
@@ -1570,16 +1560,6 @@ typedef Foo Bar;  // 但在 C++ 代码中优先使用 using
 using ::other_namespace::Foo;
 using enum MyEnumType;  // 为 MyEnumType 的所有枚举项创建别名
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-
 而以下别名未说明用途，部分本不应供客户端使用：
 
 ```
@@ -1592,15 +1572,6 @@ using DataTable = ::std::unordered_set<::foo::Bar*, ::foo::BarHash>;
 using Props = ::std::unordered_map<::std::string, ::foo::Property>;
 }  // namespace mynamespace
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-
 但函数定义、类的私有部分、显式标记的内部命名空间及 `.cc` 文件中的局部便利别名是允许的：
 
 ```
@@ -1612,10 +1583,6 @@ using ::std::hash;           // 不良：仅为局部便利
 typedef unordered_set<DataPoint, hash<DataPoint>, DataPointComparator> TimeSeries;
 }  // namespace mynamespace
 ```
-
-1  
-2  
-
 ### [#](#switch-语句) Switch 语句
 
 若非基于枚举值的条件判断，switch 语句必须包含 `default` 分支（对于枚举值，编译器会警告未处理的情况）。若 `default` 分支不应执行，需按错误处理。例如：
@@ -1624,22 +1591,6 @@ typedef unordered_set<DataPoint, hash<DataPoint>, DataPointComparator> TimeSerie
 // 在 .cc 文件中
 using ::foo::Bar;
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-11  
-12  
-13  
-14  
-
 从一个 case 标签贯穿（fall-through）到另一个时，必须使用 `[[fallthrough]];` 属性标注。`[[fallthrough]];` 应置于发生贯穿的执行点。连续无代码的 case 标签无需标注：
 
 ```
@@ -1658,24 +1609,6 @@ switch (var) {
   }
 }
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-11  
-12  
-13  
-14  
-15  
-16  
-
 [#](#包容性语言-inclusive-language) 包容性语言（Inclusive Language）
 --------------------------------------------------------
 
@@ -1734,19 +1667,6 @@ switch (x) {
     ...
 }
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-11  
-
 ### [#](#concept-命名-concept-names) Concept 命名（Concept Names）
 
 概念命名规则与类型命名相同。
@@ -1772,10 +1692,6 @@ using PropertiesMap = hash_map<UrlTableProperties*, std::string>;
 // 枚举
 enum class UrlTableError {...
 ```
-
-1  
-2  
-
 **类成员命名**
 
 类的数据成员命名为普通非成员变量的形式，但在末尾添加下划线。例如：
@@ -1784,14 +1700,6 @@ enum class UrlTableError {...
 std::string table_name;  // 正确 - 蛇形命名。
 std::string tableName;   // 错误 - 混合大小写。
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-
 **结构体成员命名**
 
 结构体的数据成员命名为普通非成员变量的形式。它们没有类的数据成员所带的末尾下划线。例如：
@@ -1804,13 +1712,6 @@ class TableInfo {
   static Pool<TableInfo>* pool_;  // 正确。
 };
 ```
-
-1  
-2  
-3  
-4  
-5  
-
 有关何时使用结构体而非类的讨论，请参见 [Structs vs. Classes (opens new window)](https://google.github.io/styleguide/cppguide.html#Structs_vs._Classes)。
 
 ### [#](#常量命名) 常量命名
@@ -1824,30 +1725,12 @@ struct UrlTableProperties {
   static Pool<UrlTableProperties>* pool;
 };
 ```
-
-1  
-2  
-
 所有具有静态存储期（即静态和全局变量，详细信息请参见[存储持续时间 (opens new window)](https://google.github.io/styleguide/cppguide.html#Storage_Duration)）的此类变量都应按照这种方式命名，包括模板中不同实例化可能具有不同值的变量。对于其他存储类别的变量（例如自动变量），此惯例是可选的；否则，通常的变量命名规则适用。例如：
 
 ```
 const int kDaysInAWeek = 7;
 const int kAndroid8_0_0 = 24;  // Android 8.0.0
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-11  
-12  
-
 ### [#](#函数命名) 函数命名
 
 函数名称遵循驼峰命名法；访问器和修改器可以像变量一样命名。
@@ -1868,11 +1751,6 @@ void ComputeFoo(absl::string_view suffix) {
   ...
 }
 ```
-
-1  
-2  
-3  
-
 （此命名规则同样适用于作为 API 一部分公开的类和命名空间作用域常量，这些常量旨在看起来像函数，因为它们是对象而非函数的这一事实是一个不重要的实现细节。）
 
 访问器和修改器（获取和设置函数）可以像变量一样命名。这些通常与实际成员变量相对应，但并非必须。例如，int count() 和 void set_count(int count)。
@@ -1898,19 +1776,6 @@ AddTableEntry()
 DeleteUrl()
 OpenFileOrDie()
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-11  
-
 2009 年 1 月前曾使用宏式命名（全大写加下划线），但因易导致名称冲突，现已改为常量式命名。新代码应使用常量式命名。
 
 ### [#](#宏命名) 宏命名
@@ -1936,13 +1801,6 @@ enum class AlternateUrlTableError {
   MALFORMED_INPUT = 2,
 };
 ```
-
-1  
-2  
-3  
-4  
-5  
-
 [#](#注释规范) 注释规范
 ---------------
 
@@ -1981,17 +1839,6 @@ bigpos          // 仿照pos的结构体/类命名
 sparse_hash_map // STL风格实体命名
 LONGLONG_MAX    // 仿照INT_MAX的常量命名
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-
 **类注释**
 
 类注释应为读者提供足够的信息，以便了解如何以及何时使用该类，以及正确使用该类所需的任何其他注意事项。如果类有同步假设，请记录下来。如果类的实例可以被多个线程访问，需特别注意记录多线程使用相关的规则和不变量。
@@ -2029,18 +1876,6 @@ class GargantuanTableIterator {
   ...
 };
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-
 然而，不要过于冗长或陈述完全明显的内容。
 
 在记录函数重载时，重点关注重载本身的具体内容，而不是重复被重载函数的注释。在许多情况下，重载不需要额外的文档，因此不需要注释。
@@ -2073,12 +1908,6 @@ class GargantuanTableIterator {
 //    return iter;
 std::unique_ptr<Iterator> GetIterator(absl::string_view start_word) const;
 ```
-
-1  
-2  
-3  
-4  
-
 #### [#](#全局变量) 全局变量
 
 所有全局变量应有注释说明其作用、用途，以及（若不明显）为何需要全局存在。例如：
@@ -2089,10 +1918,6 @@ private:
   // 我们尚不知道表有多少条目
   int num_total_entries_;
 ```
-
-1  
-2  
-
 ### [#](#实现注释) 实现注释
 
 在实现中应对复杂、非显而易见、有趣或重要的代码部分添加注释。
@@ -2111,23 +1936,12 @@ private:
 // The total number of tests cases that we run through in this regression test.
 const int kNumTestCases = 6;
 ```
-
-1  
-2  
-
 与：
 
 ```
 // 这些参数是什么？
 const DecimalNumber product = CalculateProduct(values, 7, false, nullptr);
 ```
-
-1  
-2  
-3  
-4  
-5  
-
 **禁止项**
 
 不要陈述显而易见的内容。特别地，不要逐字描述代码行为，除非该行为对熟悉 C++ 的读者而言非显而易见。应提供说明代码动机的高层级注释，或使代码自描述。
@@ -2141,13 +1955,6 @@ options.set_use_cache(ProductOptions::kDontUseCache);
 const DecimalNumber product =
     CalculateProduct(values, options, /*completion_callback=*/nullptr);
 ```
-
-1  
-2  
-3  
-4  
-5  
-
 与：
 
 ```
@@ -2157,13 +1964,6 @@ if (it != v.end()) {
   Process(element);
 }
 ```
-
-1  
-2  
-3  
-4  
-5  
-
 自描述代码不需要注释。上例中的注释应是显而易见的：
 
 ```
@@ -2173,11 +1973,6 @@ if (it != v.end()) {
   Process(element);
 }
 ```
-
-1  
-2  
-3  
-
 ### [#](#标点、拼写和语法) 标点、拼写和语法
 
 注意标点、拼写和语法规范，因为精心编写的注释更易阅读。
@@ -2197,12 +1992,6 @@ if (!IsAlreadyProcessed(element)) {
   Process(element);
 }
 ```
-
-1  
-2  
-3  
-4  
-
 如果您的 TODO 是 “将来某个日期执行某事” 的形式，请确保包含一个非常具体的日期（例如“在 2005 年 11 月之前修复”）或一个非常具体的事件（“当所有客户端都能处理 XML 响应时删除此代码”）。
 
 [#](#格式规范) 格式规范
@@ -2276,11 +2065,6 @@ if (!IsAlreadyProcessed(element)) {
 // TODO(bug 12345678): Update this list after the Foo service is turned down.
 // TODO(John): Use a "\*" here for concatenation operator.
 ```
-
-1  
-2  
-3  
-
 超长函数名换行示例：
 
 ```
@@ -2288,12 +2072,6 @@ ReturnType ClassName::FunctionName(Type par_name1, Type par_name2) {
   DoSomething();
 }
 ```
-
-1  
-2  
-3  
-4  
-
 首个参数无法容纳时的换行示例：
 
 ```
@@ -2302,14 +2080,6 @@ ReturnType ClassName::ReallyLongFunctionName(Type par_name1, Type par_name2,
   DoSomething();
 }
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-
 关键规范要点： ● 选择恰当的参数名称 ● 仅当参数未在函数体中使用时可省略参数名 ● 返回类型与函数名无法同行时，在二者之间换行 ● 函数声明 / 定义的返回类型后换行时不缩进 · 左圆括号始终与函数名同行 · 函数名与左圆括号间不留空格 · 参数列表与圆括号间不留空格 · 左花括号始终位于函数声明末行行尾，不单独起行 · 右花括号可单独成行或与左花括号同行 • 右圆括号与左花括号间保留空格 • 尽可能对齐所有参数 · 基础缩进为 2 个空格 • 换行参数使用 4 空格缩进
 
 上下文明确的未使用参数可省略：
@@ -2322,14 +2092,6 @@ ReturnType LongClassName::ReallyReallyReallyLongFunctionName(
   DoSomething();
 }
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-
 存在歧义的未使用参数应在函数定义中注释变量名：
 
 ```
@@ -2340,17 +2102,11 @@ class MyClass {
   }
 };
 ```
-
-1  
-
 属性和展开为属性的宏应置于函数声明 / 定义最前端，位于返回类型之前：
 
 ```
 void Callback(int /*unused_param*/) {}
 ```
-
-1  
-
 ### [#](#lambda表达式-2) Lambda 表达式
 
 参数列表和函数体遵循常规函数格式，捕获列表按逗号分隔列表规则处理。
@@ -2360,23 +2116,12 @@ void Callback(int /*unused_param*/) {}
 ```
 ABSL_ATTRIBUTE_NOINLINE void ExpensiveFunction();
 ```
-
-1  
-2  
-
 简短 lambda 表达式可作为函数参数内联编写：
 
 ```
 int x = 0;
 auto x_plus_n = [&x](int n) -> int { return x + n; };
 ```
-
-1  
-2  
-3  
-4  
-5  
-
 ### [#](#浮点型字面量) 浮点型字面量
 
 浮点数字面量必须始终包含小数点，且小数点前后均应有数字，即使采用科学计数法。
@@ -2392,11 +2137,6 @@ digits.erase(std::remove_if(digits.begin(), digits.end(),
                             [&to_remove](int i) { return to_remove.contains(i); }),
              digits.end());
 ```
-
-1  
-2  
-3  
-
 正确示例：
 
 ```
@@ -2404,13 +2144,6 @@ float f = 1.f;
 long double ld = -.5L;
 double d = 1248e6;
 ```
-
-1  
-2  
-3  
-4  
-5  
-
 ### [#](#函数调用) 函数调用
 
 函数调用可单行书写，也可在括号处换行，或在新行以 4 空格缩进参数并保持该缩进。若无特殊考虑，应使用最少行数，适当将多个参数置于同一行。
@@ -2424,35 +2157,17 @@ float f3 = 1;    // Also OK
 long double ld = -0.5L;
 double d = 1248.0e6;
 ```
-
-1  
-
 若参数无法单行容纳，应分行书写，后续行与首个参数对齐。勿在左括号后或右括号前添加空格：
 
 ```
 bool result = DoSomething(argument1, argument2, argument3);
 ```
-
-1  
-2  
-
 也可选择将所有参数置于后续行并 4 空格缩进：
 
 ```
 bool result = DoSomething(averyveryveryverylongargument1,
                           argument2, argument3);
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-
 除非存在特定可读性问题，应将多个参数置于单行以减少行数。部分人认为每行仅一个参数更易读且便于编辑，但我们优先考虑可读性而非编辑便利性，多数可读性问题可通过以下方法解决。
 
 若单行多参数因表达式复杂导致可读性下降，可创建具描述性名称的变量存储参数：
@@ -2468,20 +2183,12 @@ if (...) {
     ...
   }
 ```
-
-1  
-2  
-
 或为复杂参数单独换行并添加注释：
 
 ```
 int my_heuristic = scores[x] * y + bases[x];
 bool result = DoSomething(my_heuristic, x, y, z);
 ```
-
-1  
-2  
-
 若某参数单独分行显著提升可读性，可为之单独分行。此决定应基于具体参数而非通用规则。
 
 某些情况下参数构成特定结构，此时可按结构格式化：
@@ -2490,12 +2197,6 @@ bool result = DoSomething(my_heuristic, x, y, z);
 bool result = DoSomething(scores[x] * y + bases[x],  // 分数启发式计算
                           x, y, z);
 ```
-
-1  
-2  
-3  
-4  
-
 ### [#](#大括号初始化列表格式) 大括号初始化列表格式
 
 大括号初始化列表格式应与函数调用完全一致。
@@ -2508,43 +2209,12 @@ my_widget.Transform(x1, x2, x3,
                     y1, y2, y3,
                     z1, z2, z3);
 ```
-
-1  
-2  
-3  
-4  
-
 ```
 // 单行大括号初始化示例
 return {foo, bar};
 functioncall({foo, bar});
 std::pair<int, int> p{foo, bar};
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-11  
-12  
-13  
-14  
-15  
-16  
-17  
-18  
-19  
-20  
-21  
-22  
-23  
-
 ### [#](#循环与分支语句) 循环与分支语句
 
 循环或分支语句由以下组件构成：
@@ -2644,17 +2314,6 @@ if (condition1 &&
     condition2)
   DoSomething();
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-
 此例外不适用于`if...else`或`do...while`等复合语句。
 
 ```
@@ -2668,15 +2327,6 @@ if (x == kFoo) return new Foo();
 if (x == kBar)
   Bar(arg1, arg2, arg3);
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-
 仅在语句简短时使用此风格，复杂条件或语句建议使用花括号。部分项目要求始终使用花括号。
 
 `switch`语句的`case`块可选择是否使用花括号。若使用，格式如下：
