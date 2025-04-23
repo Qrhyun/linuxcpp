@@ -1188,9 +1188,6 @@ Lambda 表达式可用 `auto` 关键字替代部分或全部参数类型。这�
 auto f() { return 0; }  // 函数 f 的返回类型是 int
 ```
 
-1  
-2  
-
 **Lambda 初始化捕获（Lambda init captures）**
 
 Lambda 捕获可含显式初始化器，用于声明全新变量而非仅捕获现有变量：
@@ -1199,8 +1196,6 @@ Lambda 捕获可含显式初始化器，用于声明全新变量而非仅捕获�
 // 按降序排序 vec
 std::sort(vec.begin(), vec.end(), [](auto lhs, auto rhs) { return lhs > rhs; });
 ```
-
-1  
 
 此语法不允许指定类型，类型推导规则与 `auto` 变量相同。
 
@@ -1215,10 +1210,6 @@ std::sort(vec.begin(), vec.end(), [](auto lhs, auto rhs) { return lhs > rhs; });
 ```
 [x = 42, y = "foo"] { /*...*/ }  // x 是 int 类型，y 是 const char*
 ```
-
-1  
-2  
-3  
 
 `auto` 可搭配 `const`、`&` 和 `&&` 限定符使用，但需注意这些限定符实际作用于匿名元组 / 结构体 / 数组而非单个绑定。绑定类型的推导规则较为复杂，结果通常符合直觉，但绑定类型通常不会成为引用（即使声明中使用了引用限定符）。
 
@@ -1237,9 +1228,6 @@ auto [iter, success] = my_map.insert({key, value});
 if (!success)
   iter->second = value;
 ```
-
-1  
-2  
 
 若 `y` 的类型不明确或声明位置较远，推导结果类型可能难以判断。
 
@@ -1263,11 +1251,6 @@ if (!success)
 auto foo = x.add_foo();
 auto i = y.Find(key);
 ```
-
-1  
-2  
-3  
-
 类型有时混杂有效信息与样板代码，如上例 `it` 明显是迭代器类型，容器类型甚至键类型常无关紧要，但值类型可能重要。此类情况下，可用显式类型声明局部变量传递关键信息：
 
 ```
@@ -1275,11 +1258,6 @@ std::unordered_map<std::string, std::unique_ptr<Widget>>::iterator it = m.find(k
 // vs
 auto it = m.find(key);
 ```
-
-1  
-2  
-3  
-
 若类型为模板实例且参数为样板代码，可使用类模板实参推导（CTAD）消除样板。但实际受益场景较少。注意 CTAD 需遵守独立风格规则。
 
 若简单方案可行，则避免使用 `decltype(auto)`，因其晦涩性会损害代码清晰度。
@@ -1307,9 +1285,6 @@ for (const auto& [key, value] : m) {  // 键值类型明确
   // ...
 }
 ```
-
-1  
-
 与函数参数注释类似，此方式可帮助工具检测字段顺序错误。
 
 ### [#](#类模板实参推导-class-template-argument-deduction) 类模板实参推导（Class template argument deduction）
@@ -1323,18 +1298,11 @@ for (const auto& [key, value] : m) {  // 键值类型明确
 ```
 auto [/*field1=*/name, /*field2=*/address] = GetStruct();
 ```
-
-1  
-
 此功能依赖 "推导指引"——指导编译器如何将构造函数参数映射到模板实参的规则。显式推导指引语法示例（`std::array` 的推导指引）：
 
 ```
 std::array arr = {1, 2, 3};  // 推导为 std::array<int, 3>
 ```
-
-1  
-2  
-
 主模板（非特化模板）的构造函数会隐式定义推导指引。当声明依赖 CTAD 的变量时，编译器通过构造函数重载决议选择推导指引，其返回类型成为变量类型。
 
 **优点：**
@@ -1365,19 +1333,6 @@ CTAD 也存在与`auto`相似的缺陷，因为它们都是通过初始化表达
 template <class T, class... U>
 array(T, U...) -> array<T, 1 + sizeof...(U)>;
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-11  
-
 显式列出的字段按指定值初始化，其他字段的初始化方式与传统聚合初始化（如`Point{1.0, 2.0}`）相同。
 
 **优点：**
@@ -1415,11 +1370,6 @@ Point p = {
   // z 将初始化为0.0
 };
 ```
-
-1  
-2  
-3  
-
 lambda 可以通过显式命名或默认捕获从外围作用域捕获变量：
 
 显式捕获要求逐个列出值捕获或引用捕获的变量：
@@ -1428,13 +1378,7 @@ lambda 可以通过显式命名或默认捕获从外围作用域捕获变量：
 std::sort(v.begin(), v.end(), [](int x, int y) {
   return Weight(x) < Weight(y);
 });
-```
-
-1  
-2  
-3  
-4  
-5  
+```  
 
 默认捕获会隐式捕获 lambda 体内引用的所有变量（若使用成员变量则包括`this`）：
 
@@ -1445,12 +1389,6 @@ std::for_each(v.begin(), v.end(), [&sum, weight](int x) {
   sum += weight * x;
 });
 ```
-
-1  
-2  
-3  
-4  
-
 此类捕获无需实际从外围作用域 "捕获" 任何内容，甚至可以使用外围作用域不存在的名称。这种语法本质上是定义 lambda 对象成员的通用方式：
 
 ```
@@ -1459,9 +1397,6 @@ std::unique_ptr<Foo> foo = ...;
   ...
 };
 ```
-
-1  
-
 带初始化器的捕获类型使用与`auto`相同的规则推导。
 
 **优点：**
@@ -1479,19 +1414,6 @@ std::unique_ptr<Foo> foo = ...;
 ```
 auto lambda = [value = 1] { return value; };
 ```
-
-1  
-2  
-3  
-4  
-5  
-6  
-7  
-8  
-9  
-10  
-11  
-
 • 仅当 lambda 生命周期明显短于被捕获变量时，才使用引用默认捕获（`[&]`） • 仅当绑定少量变量至简短 lambda，且捕获集合一目了然（不隐式捕获`this`）时，才使用值默认捕获（`[=]`）。避免对复杂 lambda 使用值默认捕获 • 捕获仅用于实际获取外围变量。不要通过初始化捕获引入新名称或改变现有名称语义，应通过常规变量声明后捕获，或显式定义函数对象 • 关于参数和返回类型规范，参考类型推导章节
 
 ### [#](#模板元编程-template-metaprogramming) 模板元编程（Template Metaprogramming）
