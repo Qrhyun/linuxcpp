@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>images/dian.png</file>
+        <file>images/location.png</file>
+        <file>images/qian.png</file>
+        <file>images/xi.png</file>
+        <file>images/like.png</file>
+        <file>images/news.png</file>
+    </qresource>
+</RCC>
