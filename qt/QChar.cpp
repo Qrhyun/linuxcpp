@@ -1,4 +1,5 @@
-//这里是纯ui的交互，一些QChar和QString的例子
+//这里是纯ui的交互，一些QChar的例子
+//text()，unicode()
 void Widget::on_btnGetChars_clicked()
 {
     QString str=ui->editStr->text();
@@ -20,7 +21,7 @@ void Widget::on_btnClear_clicked()
     ui->plainTextEdit->clear();
 }
 
-
+//isDigit()......
 void Widget::on_btnCharJudge_clicked()
 {
     QString str=ui->editChar->text();
