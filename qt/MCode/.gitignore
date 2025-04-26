@@ -1,0 +1,96 @@
+# 忽略 Qt 构建生成的文件
+*.pro.user
+*.pro.user.*  # Qt Creator 用户配置文件
+*.qmake.stash
+*.qmake.conf
+
+# 忽略构建目录
+build-*
+*/build-*
+
+# 忽略临时文件
+*.o           # 编译生成的目标文件
+*.a           # 静态库文件
+*.so          # 动态库文件
+*.dll         # Windows 动态链接库
+*.pdb         # 调试符号文件
+*.exp         # 导出文件
+*.lib         # Windows 静态库文件
+
+# 忽略 Qt 构建生成的可执行文件
+*.exe
+*.app
+
+# 忽略 Qt 构建生成的其他文件
+Makefile
+Makefile.*
+qmake.*
+*.qmake.cache
+*.qmake.stash
+*.qmake.conf
+
+# 忽略 Qt Creator 生成的文件
+*.creator
+*.creator.user
+*.creator.user.*
+*.cache
+*.config
+*.user
+*.user.*
+
+# 忽略调试器生成的文件
+*.gdb_history
+*.gdbinit
+
+# 忽略临时文件和备份文件
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# 忽略日志文件
+*.log
+
+# 忽略自动生成的文件
+*.moc
+*.gmo
+*.qm
+*.ts
+*.pot
+
+# 忽略 Qt Linguist 工具生成的文件
+*.qm
+*.ts
+*.pot
+
+# 忽略 Qt Designer 生成的文件
+*.ui
+*.qrc
+*.qss
+
+# 忽略 Qt Quick 编译器生成的文件
+*.qmlc
+*.qmlp
+*.qmls
+
+# 忽略其他可能的临时文件
+*.lock
+*.pid
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# 忽略 Qt 的临时文件夹
+.qmake.stash
+.qmake.conf
+
+# 忽略 Qt 的构建系统文件
+*.pro.user
+*.pro.user.*
+*.qmake.stash
+*.qmake.conf
