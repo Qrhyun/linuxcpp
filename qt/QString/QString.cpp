@@ -206,4 +206,86 @@ void Widget::on_btnReplace_clicked()
         qDebug(str1.toLocal8Bit().data());
         ui->plainTextEdit->appendPlainText(str1);
 }
+#include "widget.h"
+#include "ui_widget.h"
+
+Widget::Widget(QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::Widget)
+{
+    ui->setupUi(this);
+}
+
+Widget::~Widget()
+{
+    delete ui;
+}
+
+//介绍了QString的toInt()和toFloat()函数,以及QString的成员函数setNum()，以及静态成员函数number()的用法
+void Widget::on_btnCal_clicked()
+{
+    //text()获取文本内容,是QString类型，用toInt()转换为int类型,用toFloat()转换为float类型
+    int num=ui->editNum->text().toInt();
+    float price=ui->editPrice->text().toFloat();
+
+    float total=price*num;
+    QString str=QString::number(total,'f',2);//这里是QString的静态成员函数number()，可以设置数字格式和精度
+   // str=str.setNum(total,'f',2);这里是QString的成员函数setNum()，可以设置数字格式和精度
+    ui->editTotal->setText(str);//setText()设置文本内容
+}
+
+//介绍了QSring的toLocal8Bit()函数,它是将QString转换为QByteArray类型的函数
+void Widget::on_btnDebug_clicked()
+{
+    qDebug("PI=%f",3.1415926);
+    QString str=QString::number(3.1415926,'f',10);
+    qDebug("PI=%s",str.toLocal8Bit().data());
+    /*
+    1.作用是将QString对象中的内容转换为本地8位编码的QByteArray对象。QByteArray是一个模板化的类，用于存储字节序列，其内部存储的是char类型的数组
+    2.本地8位编码通常是指系统默认的编码格式，例如在Windows系统中可能是ANSI编码，在Linux系统中可能是UTF-8编码
+    3.%s是C语言中用于格式化字符串的占位符，表示将后面的参数作为字符串输出
+    4.data()是QByteArray类的成员函数，用于返回指向字节数组的指针，类型为const char*。这个指针可以被用作C语言风格的字符串
+    5.QString是Qt中用于处理字符串的类，它内部使用UTF-16编码来存储字符。UTF-16是一种Unicode编码，每个字符通常占用2个字节（16位），某些特殊字符可能占用4个字节。
+    6.在Qt中，QString类提供了多种方法来处理字符串，包括转换编码、格式化输出等。toLocal8Bit()函数就是其中之一，它可以将QString对象转换为本地8位编码的QByteArray对象
+    7.编码不匹配：QString内部使用UTF-16编码，而C++的const char*通常被假设为使用系统的本地编码（如ANSI或UTF-8）。如果直接将UTF-16编码的数据当作ANSI或UTF-8编码来处理，就会导致乱码。
+      字节数不一致：UTF-16编码的字符占用2个字节（或4个字节），而const char*中的每个字符只占用1个字节。直接转换会导致字节对齐问题，从而产生乱码。
+    */
+}
+
+//转化十进制数为二进制和十六进制数
+void Widget::on_btnDec_clicked()
+{
+    int val=ui->editDec->text().toInt();
+    QString str=QString::number(val,16);
+    ui->editHex->setText(str);
+    str=QString::number(val,2);
+    ui->editBin->setText(str);
+}
+
+//转化二进制数为十进制和十六进制数
+void Widget::on_btnBin_clicked()
+{
+    bool ok;
+    int val=ui->editBin->text().toInt(&ok,2);//ok是一个bool类型的变量，用于判断转换是否成功，后面的参数2表示将字符串转换为二进制数，即以2进制读取
+    if(!ok) return;
+
+    QString str=QString::number(val,16);
+    ui->editHex->setText(str);
+    str=QString::number(val);
+    ui->editDec->setText(str);
+}
+
+//转化十六进制数为十进制和二进制数
+void Widget::on_btnHex_clicked()
+{
+    bool ok;
+    int val= ui->editHex->text().toInt(&ok,16);
+
+    QString str= QString::number(val,10);
+    ui->editDec->setText(str);
+
+    str= QString::number(val,2);
+    ui->editBin->setText(str);
+}
+
 
