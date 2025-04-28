@@ -14,8 +14,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 private:
-    QStringList m_strList;
-    QStringListModel *m_model;
+    QStringList m_strList;//表示底层数据，这里利用对象 实例从而声明了一个实例
+    QStringListModel *m_model;//表示数据模型model。这里仅仅是声明了一个QStringListModel指针，还没有实例化
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
