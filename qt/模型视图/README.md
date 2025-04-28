@@ -4,7 +4,7 @@
 
 ![1](./9.jpg)
 
-# 第二张图介绍了 QAbstractItemView视图基类，QAbstractltemDelegate 是所有代理类的基类
+# 第二张图介绍了 QAbstractItemView视图基类(注意里面的setMOdell()函数)，QAbstractltemDelegate 是所有代理类的基类
 
 ![2](./3.jpg)
 
