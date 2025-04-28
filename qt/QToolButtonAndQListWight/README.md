@@ -1,0 +1,5 @@
+# 工具箱QToolBox类和工具按钮QToolButton类和QListWidget列表组件
+1. QToolButton一般要与action绑定，这个类里面的autoRaise可以设置有无边框，arrowType可以设置向下向上箭头
+2. 工具箱QToolBox里面也可以有QToolButton按钮，这里面的QToolButton按钮可以通过设置setDefaultAction()函数，可以与Action关联
+3. 对于action,右键选择trigger进行实现，action可以在QMainWindow的QToolBox里面（设置action按钮的时候，可以先设置action，然后拖到指定位置，也可以先设置好指定位置的组件，然后将这个组件设置为action
+4. QListWidget列表组件是与action搭配使用的，action一旦触发，QListWidget列表组件便会有所行动，比如显示，列表的每个项是一个QListWidgetItem对象，一个项存储了文字、图标、用户数据等内容。
