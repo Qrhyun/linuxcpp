@@ -1,0 +1,6 @@
+本节内容介绍了以QStyledItemDelegate为基类的3个自定义代理类，TSpinBoxDelegate为编辑整数数据的单元格提供一个QSpinBox组件作为代理编辑器；TFloatSpinDelegate为编辑浮点数的单元格提供一个QDoubleSpinBox组件作为代理编辑器；TComboBoxDelegate可以提供一个下拉列表框作为代理编辑器。
+然后实现了下面的三个函数
+createEditor():创建用于编辑模型数据的widget组件，如QSpinBox,QComboBox。
+setEditorData():从数据模型获取数据，供widget组件进行编辑 。 
+setModelData():将widget上的数据更新到数据模型。
+updateEditorGeometry():用于给widget组件设置一个合适的大小。
