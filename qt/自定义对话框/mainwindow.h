@@ -14,6 +14,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 private:
+    //用于作为状态栏的显示
     QLabel *labCellPos;
     QLabel *labCellText;
 
