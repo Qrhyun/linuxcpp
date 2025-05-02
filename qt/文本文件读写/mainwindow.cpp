@@ -93,11 +93,11 @@ void MainWindow::on_actSave_TextStream_triggered()
     try{
         QTextStream aStream(&aFile);
         aStream.setAutoDetectUnicode(true);
-        QTextDocument *doc=ui->textEditStream->document();//获取文本编辑器的文档对象
+        QTextDocument *doc=ui->textEditStream->document();//获取文本编辑器的文档对象，获取用户界面中 textEditStream 文本编辑器的文档对象 doc，用于逐行读取文本内容
         for(int i=0;i<doc->blockCount();++i)
         {
-            aStream<<doc->findBlockByNumber(i).text();
-            aStream<<"\n";
+            aStream<<doc->findBlockByNumber(i).text();//遍历文档中的每一段（block），通过 findBlockByNumber(i) 获取第 i 段的文本内容
+            aStream<<"\n";//使用 aStream 将每段文本写入文件，并在每段后添加换行符 \n
         }
         aFile.commit();
     }
